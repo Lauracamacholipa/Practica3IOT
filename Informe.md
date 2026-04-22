@@ -52,3 +52,50 @@
 **RNF03:** El objeto inteligente deberá ignorar mediciones fuera de rango, registrando el evento sin interrumpir la ejecución.
 
 **RNF04:** El sistema deberá establecer conexión MQTT con un **Client ID único** que incluya el identificador del grupo, verificable en los logs de conexión del broker.
+
+# **2. Diseño del Sistema**
+
+## 2.1. Diagrama de bloques
+
+El sistema funciona de forma simple: el sensor ultrasónico detecta qué tan cerca está un objeto y lo clasifica por colores según la distancia (rojo si está muy cerca, amarillo a una distancia media, verde si está más lejos, o fuera de rango si no entra en esos valores).
+
+Esa información se envía constantemente a la nube mediante MQTT. Allí, un programa en Python recibe los datos y los guarda para que otros puedan consultarlos.
+
+Por otro lado, desde una aplicación o consola se pueden enviar comandos para encender o apagar los LEDs (rojo, amarillo, verde o todos apagados). Estos comandos también viajan por la nube hasta el ESP32, que los recibe y enciende las luces correspondientes al instante.
+
+En resumen, el sistema permite ver la distancia de un objeto y controlar las luces en tiempo real desde cualquier lugar usando la nube.
+
+![Diagramas_IOT_PRACTICA2-P3 - Diagrama de Bloques.drawio.png](attachment:8c20cf47-4cac-4aa0-b01a-91fa69be778d:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_Bloques.drawio.png)
+
+## 2.2. Diagrama de circuito
+
+El sistema electrónico fue representado mediante un diagrama esquemático elaborado en el software KiCad, donde se muestran las interconexiones entre el microcontrolador, el sensor ultrasónico y los elementos de señalización visual. El núcleo del circuito está constituido por el módulo ESP32-WROOM-32, el cual actúa como unidad de procesamiento y control del sistema.
+
+Para la medición de distancia se emplea el sensor ultrasónico HC-SR04, el cual se conecta al microcontrolador mediante cuatro terminales.Asimismo, el sistema incluye tres diodos emisores de luz (LED) utilizados como indicadores visuales del rango de distancia detectado. Cada LED se conecta a un pin de salida digital del microcontrolador y se encuentra en serie con una resistencia de 200 Ω, cuya función es limitar la corriente que circula por el diodo para evitar su deterioro.
+
+![image.png](attachment:0b5bc234-7592-4767-b0f1-a7689a24dac0:b3a6b9ea-1ab6-4b94-be5d-215cd7247ad3.png)
+
+## 2.3. Diagrama de arquitectura del sistema
+
+El diagrama muestra un sistema dividido en dos partes:
+
+**Nivel local (WiFi):**
+
+Hay dos dispositivos ESP32. Uno funciona como sensor, usando el ultrasónico para medir la distancia y clasificarla en colores (rojo, amarillo, verde o fuera de rango), enviando los datos constantemente. El otro funciona como actuador, recibiendo comandos para encender o apagar los LEDs de esos mismos colores. Ambos están conectados a la misma red WiFi.
+
+**Nivel nube (Internet):**
+
+En la nube hay un broker MQTT (HiveMQ) que actúa como intermediario: recibe los datos del sensor y envía los comandos hacia el actuador.
+
+También hay un servidor en Python que se conecta a ese broker, guarda la información de la distancia y permite dos cosas: consultar los datos o enviar comandos a los LEDs.
+
+Desde cualquier lugar, un cliente (como una consola o app) puede conectarse a ese servidor para ver la distancia o controlar las luces.
+
+![Diagramas_IOT_PRACTICA2-P3 - Diagrama de arquitectura.drawio.png](attachment:df78bba1-5902-421e-8a4b-deab9e10ba42:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_arquitectura.drawio.png)
+
+## 2.4. Diagramas estructurales y de comportamiento
+### 2.4.3. Diagrama de secuencia
+
+El sistema usa arquitectura **publish/subscribe MQTT** donde el Broker HiveMQ actúa como intermediario central. El ESP32 publica mediciones del sensor ultrasónico solo cuando cambia el rango de distancia (optimización). Tanto la App Móvil como el Servidor MCP pueden enviar comandos a los LEDs publicando en `actuator/leds`. El MCP Server usa herramientas (tools) que Claude Desktop interpreta desde lenguaje natural, almacena el último valor del sensor localmente y puede consultar/controlar el dispositivo IoT mediante MQTT con autenticación TLS.
+
+![Diagramas_IOT_PRACTICA2-P3 - Diagrama de Secuencia.drawio.png](attachment:50e39e6a-c25d-4036-becf-ce9bc49dee28:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_Secuencia.drawio.png)
