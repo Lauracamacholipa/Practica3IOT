@@ -98,7 +98,7 @@ Desde cualquier lugar, un cliente (como una consola o app) puede conectarse a es
 
 ### 2.4.1. Diagrama estructural
 
-El diagrama estructural muestra los componentes principales del sistema: el sensor ultrasónico HC-SR04 encargado de medir la distancia, el microcontrolador Arduino responsable del procesamiento de los datos y la clasificación del rango de distancia, y el sistema de LEDs que indica visualmente el resultado de la medición
+El diagrama estructural muestra los componentes principales del sistema: el sensor ultrasónico HC-SR04 encargado de medir la distancia, el objeto inteligente del procesamiento de los datos y la clasificación del rango de distancia, y el sistema de LEDs que indica visualmente el resultado de la medición
 
 <img width="1440" height="1140" alt="image" src="https://github.com/user-attachments/assets/fa109679-8eec-4fca-90c1-2326ebb89600" />
 
