@@ -202,3 +202,135 @@ MCP-MQTT/
 ```
 
 Esta estructura permite una clara separación de responsabilidades y facilita el mantenimiento y escalabilidad del sistema.
+
+# **4. Pruebas y Validaciones**
+
+## 4.1. Objetivo de las pruebas
+
+El objetivo de las pruebas realizadas es verificar el correcto funcionamiento del sistema IoT desarrollado, evaluando de manera integral la adquisición de datos, la comunicación mediante MQTT, la interacción con aplicaciones externas y la ejecución de acciones en los actuadores.
+
+En particular, se busca validar que:
+
+- El objeto inteligente mide y transmite correctamente la distancia.
+- La comunicación mediante el protocolo MQTT es funcional y estable.
+- Los comandos enviados desde diferentes interfaces (aplicación móvil e IA) son correctamente interpretados y ejecutados.
+- El sistema mantiene su operatividad ante condiciones normales y escenarios de reconexión.
+
+## 4.2. Metodología de pruebas
+
+Las pruebas se realizaron utilizando el sistema completo en funcionamiento, compuesto por el objeto inteligente basado en ESP32, el broker MQTT en la nube, la aplicación móvil IoT MQTT Panel y el servidor intermedio en Python con integración de herramientas de IA.
+
+El procedimiento general consistió en:
+
+1. Colocar objetos a distintas distancias frente al sensor ultrasónico.
+2. Observar los valores medidos y publicados en el tópico MQTT correspondiente.
+3. Verificar la visualización de los datos en la aplicación móvil.
+4. Enviar comandos desde la aplicación móvil y desde la herramienta de IA.
+5. Comprobar la recepción de los comandos en el ESP32 y la respuesta de los LEDs.
+6. Simular eventos de desconexión de red para evaluar la capacidad de reconexión del sistema.
+7. Analizar los registros del monitor serie para validar tiempos de respuesta y manejo de eventos.
+
+A diferencia de un enfoque basado únicamente en mediciones numéricas, las pruebas se orientaron a la verificación funcional del sistema como un todo, considerando la interacción entre sus componentes.
+
+## 4.3 Validación de la comunicación
+
+Durante la ejecución de las pruebas se pudo observar que el sistema presenta un comportamiento coherente con la arquitectura propuesta basada en MQTT.
+
+El objeto inteligente logra establecer conexión con el broker en la nube y mantener comunicación bidireccional, publicando datos del sensor y recibiendo comandos de control. La publicación de datos se realiza de forma eficiente, ya que únicamente se envían mensajes cuando se detecta un cambio en el rango de distancia, evitando tráfico innecesario.
+
+La aplicación móvil permite visualizar la información en tiempo real mediante componentes gráficos, lo que facilita la interpretación de los datos por parte del usuario. Asimismo, los comandos enviados desde esta interfaz son correctamente transmitidos a través del broker y ejecutados por el dispositivo.
+
+En cuanto a la integración con la herramienta de IA, se verificó que las instrucciones en lenguaje natural pueden ser interpretadas y transformadas en comandos MQTT válidos, los cuales son enviados al sistema y ejecutados de manera adecuada. De igual forma, la consulta de datos permite recuperar el último valor de distancia registrado, evidenciando la correcta integración entre el servidor intermedio y el flujo de datos MQTT.
+
+Adicionalmente, se comprobó que el sistema es capaz de recuperar la conexión con el broker tras una interrupción de red, reanudando su funcionamiento sin intervención manual, lo que demuestra un nivel adecuado de robustez.
+
+## 4.4 Registro de pruebas
+
+Durante las pruebas se obtuvieron los siguientes resultados.
+
+### 4.4.1 Precisión del sensor ultrasónico
+
+<img width="572" height="667" alt="image (1)" src="https://github.com/user-attachments/assets/681f87d4-d681-4572-a666-7415a35786e5" />
+
+### 4.4.2 Medición y publicación de datos
+
+| **Caso** | **Distancia medida** | **Comportamiento esperado** | **Resultado observado** |
+| --- | --- | --- | --- |
+| 1 | < 2 cm | Medición inválida ignorada | No se publica dato |
+| 2 | 25 cm | Publicación de distancia | Dato publicado |
+| 3 | 80 cm | Publicación de distancia | Dato publicado |
+| 4 | 120 cm | Publicación de distancia | Dato publicado |
+| 5 | 110 cm | Sin cambio de rango | No se publica nuevo dato |
+| 6 | 90 cm | Publicación de distancia | Dato publicado |
+
+### 4.4.3 Validación de comunicación y control de actuadores
+
+| **Caso** | **Origen del comando** | **Comando enviado** | **Resultado esperado** | **Resultado observado** |
+| --- | --- | --- | --- | --- |
+| 1 | App móvil | LED_RED_ON | LED rojo encendido | Correcto |
+| 2 | App móvil | ALL_OFF | LEDs apagados | Correcto |
+| 3 | Claude Desktop | LED_GREEN_ON | LED verde encendido | Correcto |
+| 4 | Claude Desktop | LED_YELLOW_ON | LED amarillo encendido | Correcto |
+| 5 | Claude Desktop | LED_RED_ON | LED rojo encendido | Correcto |
+| 6 | Claude Desktop | ALL_OFF | LEDs apagados | Correcto |
+
+### 4.4.4 Validación de interacción y consulta de datos con IA
+
+| **Caso** | **Entrada en lenguaje natural** | **Acción esperada** | **Resultado observado** |
+| --- | --- | --- | --- |
+| 1 | “Turn on red led” | Envío de comando LED_RED_ON | LED rojo encendido |
+| 2 | “Can you turn on green led?” | Envío de comando LED_GREEN_ON | LED verde encendido |
+| 3 | “Turn off all leds” | Envío de comando ALL_OFF | LEDs apagados |
+| 4 | “What is the distance” | Consulta del último valor | Valor mostrado correctamente |
+| 5 | “Turn on red led, yellow led and green led, later turn off all leds” | Secuencia de LEDs y apagado | Secuencia correcta encendiendo y apagando los LEDs |
+
+### 4.4.5 Validación de reconexión
+
+| **Caso** | **Evento** | **Acción esperada** | **Resultado observado** |
+| --- | --- | --- | --- |
+| 1 | Pérdida de conexión | Intento de reconexión automática | Reconexión exitosa |
+| 2 | Reconexión al broker | Suscripción a tópicos | Recepción de comandos restaurada |
+| 3 | Conexión inicial | Client ID único | Identificador con sufijo aleatorio |
+
+# **5. Resultados**
+
+En esta sección se analizan los datos obtenidos durante las pruebas realizadas al sistema IoT, considerando tanto el comportamiento del sensor ultrasónico como la integración completa mediante comunicación MQTT.
+
+A partir de las mediciones registradas en el registro de precisión del sensor ultrasónico, se evaluó la exactitud del sensor comparando la distancia real con la distancia medida por el dispositivo. Los resultados muestran que el sistema presenta un error absoluto promedio de aproximadamente 1.46 cm y un error porcentual promedio cercano al 2.23 %, valores que se encuentran dentro de un rango aceptable para sensores ultrasónicos de bajo costo.
+
+Se observó que el error tiende a incrementarse ligeramente en distancias mayores, lo cual es consistente con el comportamiento esperado de este tipo de sensores, debido a factores como la dispersión de la señal ultrasónica, la calidad de la superficie del objeto y posibles interferencias en el entorno.
+
+En cuanto al comportamiento del sistema basado en MQTT, se verificó que la publicación de datos se realiza de manera eficiente, ya que el objeto inteligente únicamente envía información cuando se detecta un cambio en el rango de distancia. Este enfoque reduce significativamente el tráfico de red sin afectar la disponibilidad de la información para el usuario.
+
+La visualización de los datos en la aplicación móvil permitió confirmar que la información es recibida correctamente y presentada de forma gráfica en tiempo real. Asimismo, los comandos enviados desde la aplicación fueron ejecutados sin errores por el objeto inteligente, evidenciando la correcta implementación del mecanismo de suscripción y procesamiento de mensajes MQTT.
+
+Respecto a la integración con la herramienta de inteligencia artificial, se comprobó que las instrucciones en lenguaje natural pueden ser interpretadas y convertidas en comandos válidos, los cuales son enviados al sistema y ejecutados correctamente. De igual forma, la consulta de datos permitió obtener el último valor registrado del sensor, validando la coherencia del flujo de información.
+
+Finalmente, se observó que el sistema mantiene su funcionamiento tras interrupciones de red, logrando reconectarse automáticamente al broker MQTT y restablecer la comunicación, lo cual confirma el cumplimiento de los requisitos de robustez definidos.
+
+# 6. Conclusiones
+
+A partir del desarrollo e implementación del sistema IoT basado en MQTT, se concluye que el sistema cumple satisfactoriamente con los requerimientos funcionales y no funcionales planteados, logrando integrar de manera efectiva un objeto inteligente, una aplicación móvil y una herramienta de inteligencia artificial.
+
+Las pruebas realizadas permitieron validar que el sensor ultrasónico ofrece un nivel de precisión adecuado, con un error promedio de 1.46 cm, lo cual es consistente con las limitaciones inherentes a este tipo de dispositivos. Este nivel de precisión resulta suficiente para aplicaciones de monitoreo y control en entornos no críticos.
+
+Desde el punto de vista de la arquitectura, el uso del protocolo MQTT permitió implementar un sistema desacoplado, en el cual la adquisición de datos, la toma de decisiones y la ejecución de acciones se encuentran distribuidas entre distintos componentes. Este enfoque facilita la escalabilidad del sistema y permite su integración con múltiples interfaces, como aplicaciones móviles y herramientas de inteligencia artificial.
+
+Asimismo, se verificó que el sistema responde correctamente a los comandos enviados desde diferentes fuentes, manteniendo coherencia en la ejecución de acciones sobre los actuadores. La integración con la herramienta de IA representa un valor añadido importante, ya que permite interactuar con el sistema mediante lenguaje natural, ampliando las posibilidades de uso.
+
+Por otro lado, la implementación de mecanismos como la publicación basada en cambios de rango y la reconexión automática contribuye a mejorar la eficiencia y robustez del sistema, aspectos fundamentales en aplicaciones IoT.
+
+En términos generales, el sistema desarrollado demuestra un funcionamiento estable, eficiente y correctamente estructurado, cumpliendo con los objetivos planteados en la actividad y evidenciando la correcta aplicación de conceptos de sistemas embebidos, comunicación en red y arquitectura distribuida.
+
+# 7. Recomendaciones
+
+A partir de los resultados obtenidos y del análisis del sistema, se proponen las siguientes recomendaciones para mejorar su desempeño y ampliar sus capacidades en futuras implementaciones:
+
+- Incorporar la publicación del rango de distancia (RED, YELLOW, GREEN) como dato adicional en MQTT, facilitando su uso por aplicaciones externas o sistemas automatizados.
+- Mejorar la seguridad de la comunicación MQTT mediante la validación de certificados TLS en el dispositivo, evitando configuraciones inseguras.
+- Implementar mecanismos de confirmación de recepción de mensajes (ACK) para aumentar la confiabilidad en escenarios con mayor pérdida de paquetes.
+- Optimizar la gestión del Client ID para reflejar correctamente el identificador dinámico en los registros del sistema.
+- Considerar el uso de niveles de calidad de servicio (QoS) en MQTT para garantizar la entrega de mensajes en aplicaciones más críticas.
+- Evaluar la incorporación de nuevos actuadores o sensores que amplíen la funcionalidad del sistema, permitiendo su adaptación a otros contextos de aplicación.
+
+Estas recomendaciones permitirían mejorar la precisión, seguridad, confiabilidad y escalabilidad del sistema, convirtiéndolo en una solución más robusta para entornos IoT más exigentes.
