@@ -68,7 +68,6 @@ void MQTTManager::_connectMQTT() {
 
     if (_mqttClient.connect(clientId.c_str(), MQTT_USER, MQTT_PASS)){
         Serial.printf("[MQTT] Connected as %s\n", _clientId);
-        // Re-subscribe after reconnection
         subscribe(TOPIC_COMMANDS);
     } else {
         Serial.printf("[MQTT] Connection failed. State: %d\n", _mqttClient.state());

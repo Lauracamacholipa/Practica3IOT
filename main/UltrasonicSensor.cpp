@@ -10,14 +10,12 @@ void UltrasonicSensor::begin() {
 }
 
 float UltrasonicSensor::measure() {
-    // Send 10 µs pulse
     digitalWrite(_trigPin, LOW);
     delayMicroseconds(2);
     digitalWrite(_trigPin, HIGH);
     delayMicroseconds(10);
     digitalWrite(_trigPin, LOW);
 
-    // Read echo duration (timeout: 30 ms covers ~500 cm)
     long duration = pulseIn(_echoPin, HIGH, 50000);
 
     if (duration == 0) {

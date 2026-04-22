@@ -2,7 +2,6 @@
 
 #include <Arduino.h>
 
-// Distance ranges for classification
 enum class DistanceRange {
     INVALID,   // out of sensor bounds or no echo
     RED,       // 2–30 cm
@@ -17,13 +16,10 @@ public:
 
     void begin();
 
-    // Returns measured distance in cm; returns -1 if invalid
     float measure();
 
-    // Classifies a distance value into a DistanceRange
     DistanceRange classify(float distanceCm);
 
-    // Returns the last valid range detected
     DistanceRange getLastRange() const;
 
 private:

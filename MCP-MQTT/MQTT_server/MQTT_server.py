@@ -8,7 +8,6 @@ import ssl
 
 
 
-# ─── Broker config ────────────────────────────────────────────────────────────
 BROKER   = "2a343cb26d7749cba23d29071060df5a.s1.eu.hivemq.cloud"
 PORT     = 8883
 USERNAME = "grupo3"
@@ -41,7 +40,6 @@ mqtt_client.on_message = on_message
 mqtt_client.connect(BROKER, PORT)
 mqtt_client.loop_start()
 
-# ─── MCP server ───────────────────────────────────────────────────────────────
 app = Server("mqtt-grupo3")
 
 @app.list_tools()
@@ -81,7 +79,6 @@ async def call_tool(name: str, arguments: dict):
     if name == "get_distance":
         return [TextContent(type="text", text=f"Last distance: {last_distance['value']} cm")]
 
-# ─── Entry point ─────────────────────────────────────────────────────────────
 async def main():
     async with stdio_server() as (read_stream, write_stream):
         await app.run(read_stream, write_stream, app.create_initialization_options())
