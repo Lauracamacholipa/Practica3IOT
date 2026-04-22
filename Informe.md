@@ -95,6 +95,20 @@ Desde cualquier lugar, un cliente (como una consola o app) puede conectarse a es
 
 
 ## 2.4. Diagramas estructurales y de comportamiento
+
+### 2.4.1. Diagrama estructural
+
+El diagrama estructural muestra los componentes principales del sistema: el sensor ultrasónico HC-SR04 encargado de medir la distancia, el microcontrolador Arduino responsable del procesamiento de los datos y la clasificación del rango de distancia, y el sistema de LEDs que indica visualmente el resultado de la medición
+
+<img width="1440" height="1140" alt="image" src="https://github.com/user-attachments/assets/fa109679-8eec-4fca-90c1-2326ebb89600" />
+
+### 2.4.2. Diagrama de comportamiento
+
+Diagrama de comportamiento del algoritmo de medición y clasificación de distancia, conexion con el servidor y conexion wifi.
+
+<img width="1440" height="1740" alt="image" src="https://github.com/user-attachments/assets/9639e8fe-78b4-46b5-bfbf-b3b08ae5a934" />
+
+
 ### 2.4.3. Diagrama de secuencia
 
 El sistema usa arquitectura **publish/subscribe MQTT** donde el Broker HiveMQ actúa como intermediario central. El ESP32 publica mediciones del sensor ultrasónico solo cuando cambia el rango de distancia (optimización). Tanto la App Móvil como el Servidor MCP pueden enviar comandos a los LEDs publicando en `actuator/leds`. El MCP Server usa herramientas (tools) que Claude Desktop interpreta desde lenguaje natural, almacena el último valor del sensor localmente y puede consultar/controlar el dispositivo IoT mediante MQTT con autenticación TLS.
