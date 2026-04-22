@@ -65,7 +65,7 @@ Por otro lado, desde una aplicación o consola se pueden enviar comandos para en
 
 En resumen, el sistema permite ver la distancia de un objeto y controlar las luces en tiempo real desde cualquier lugar usando la nube.
 
-![Diagramas_IOT_PRACTICA2-P3 - Diagrama de Bloques.drawio.png](attachment:8c20cf47-4cac-4aa0-b01a-91fa69be778d:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_Bloques.drawio.png)
+<img width="2048" height="114" alt="image" src="https://github.com/user-attachments/assets/72dea0ab-3f7c-4b7b-a258-bcf9eb2e44ed" />
 
 ## 2.2. Diagrama de circuito
 
@@ -73,7 +73,7 @@ El sistema electrónico fue representado mediante un diagrama esquemático elabo
 
 Para la medición de distancia se emplea el sensor ultrasónico HC-SR04, el cual se conecta al microcontrolador mediante cuatro terminales.Asimismo, el sistema incluye tres diodos emisores de luz (LED) utilizados como indicadores visuales del rango de distancia detectado. Cada LED se conecta a un pin de salida digital del microcontrolador y se encuentra en serie con una resistencia de 200 Ω, cuya función es limitar la corriente que circula por el diodo para evitar su deterioro.
 
-![image.png](attachment:0b5bc234-7592-4767-b0f1-a7689a24dac0:b3a6b9ea-1ab6-4b94-be5d-215cd7247ad3.png)
+<img width="958" height="590" alt="image" src="https://github.com/user-attachments/assets/0b799f78-b4c4-40f4-b3ae-42ea3596f4bb" />
 
 ## 2.3. Diagrama de arquitectura del sistema
 
@@ -91,11 +91,12 @@ También hay un servidor en Python que se conecta a ese broker, guarda la inform
 
 Desde cualquier lugar, un cliente (como una consola o app) puede conectarse a ese servidor para ver la distancia o controlar las luces.
 
-![Diagramas_IOT_PRACTICA2-P3 - Diagrama de arquitectura.drawio.png](attachment:df78bba1-5902-421e-8a4b-deab9e10ba42:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_arquitectura.drawio.png)
+<img width="862" height="722" alt="image" src="https://github.com/user-attachments/assets/81476657-a5df-4784-9bd2-9261507eec75" />
+
 
 ## 2.4. Diagramas estructurales y de comportamiento
 ### 2.4.3. Diagrama de secuencia
 
 El sistema usa arquitectura **publish/subscribe MQTT** donde el Broker HiveMQ actúa como intermediario central. El ESP32 publica mediciones del sensor ultrasónico solo cuando cambia el rango de distancia (optimización). Tanto la App Móvil como el Servidor MCP pueden enviar comandos a los LEDs publicando en `actuator/leds`. El MCP Server usa herramientas (tools) que Claude Desktop interpreta desde lenguaje natural, almacena el último valor del sensor localmente y puede consultar/controlar el dispositivo IoT mediante MQTT con autenticación TLS.
 
-![Diagramas_IOT_PRACTICA2-P3 - Diagrama de Secuencia.drawio.png](attachment:50e39e6a-c25d-4036-becf-ce9bc49dee28:Diagramas_IOT_PRACTICA2-P3_-_Diagrama_de_Secuencia.drawio.png)
+<img width="1040" height="1762" alt="image" src="https://github.com/user-attachments/assets/e61e1ba8-781d-4cd3-b367-880012d488ec" />
