@@ -18,11 +18,11 @@
 
 ## 1.1. Requerimientos Funcionales
 
-**RF01:** El sistema deberá medir la distancia utilizando el sensor ultrasónico HC-SR04 en un rango de **2 cm a 150 cm**, descartando valores inválidos.
+**RF01:** El sistema deberá medir la distancia utilizando el sensor ultrasónico HC-SR04 en un rango de 2 cm a 150 cm.
 
-**RF02:** El objeto inteligente deberá **publicar la distancia medida** en un tópico MQTT cada vez que detecte un **cambio de rango**, utilizando un broker en la nube.
+**RF02:** El objeto inteligente deberá publicar la distancia medida en un tópico MQTT cada vez que detecte un cambio de rango.
 
-**RF03:** El objeto inteligente deberá **suscribirse a un tópico MQTT de comandos**, desde el cual recibirá instrucciones para controlar los actuadores.
+**RF03:** El objeto inteligente deberá suscribirse a un tópico MQTT de comandos, desde el cual recibirá instrucciones para controlar los actuadores.
 
 **RF04:** El sistema deberá interpretar los siguientes comandos recibidos vía MQTT:
 
@@ -33,7 +33,7 @@
 | `LED_GREEN_ON` | Encender LED verde |
 | `ALL_OFF` | Apagar todos los LEDs |
 
-**RF05:** El sistema deberá permitir que una **aplicación móvil (IoT MQTT Panel)** visualice la distancia en forma gráfica y envíe comandos para controlar los LEDs.
+**RF05:** El sistema deberá permitir que una aplicación móvil (IoT MQTT Panel) visualice la distancia en forma gráfica y envíe comandos para controlar los LEDs.
 
 **RF06:** El sistema deberá permitir que una herramienta de IA interprete lenguaje natural y convierta instrucciones en mensajes MQTT válidos.
 
@@ -45,13 +45,13 @@
 
 ## 1.2. Requerimientos No Funcionales
 
-**RNF01:** El código deberá mantener una **estructura modular basada en clases**, con separación de responsabilidades entre sensor, comunicación y actuador.
+**RNF01:** El código deberá mantener una estructura modular basada en clases, con separación de responsabilidades entre sensor, comunicación y actuador.
 
 **RNF02:** El sistema deberá reconectarse automáticamente al broker MQTT en caso de pérdida de conexión, con intentos cada 2000 ms.
 
 **RNF03:** El objeto inteligente deberá ignorar mediciones fuera de rango, registrando el evento sin interrumpir la ejecución.
 
-**RNF04:** El sistema deberá establecer conexión MQTT con un **Client ID único** que incluya el identificador del grupo, verificable en los logs de conexión del broker.
+**RNF04:** El sistema deberá establecer conexión MQTT con un Client ID único que incluya el identificador del grupo, verificable en los logs de conexión del broker.
 
 # **2. Diseño del Sistema**
 
@@ -100,3 +100,105 @@ Desde cualquier lugar, un cliente (como una consola o app) puede conectarse a es
 El sistema usa arquitectura **publish/subscribe MQTT** donde el Broker HiveMQ actúa como intermediario central. El ESP32 publica mediciones del sensor ultrasónico solo cuando cambia el rango de distancia (optimización). Tanto la App Móvil como el Servidor MCP pueden enviar comandos a los LEDs publicando en `actuator/leds`. El MCP Server usa herramientas (tools) que Claude Desktop interpreta desde lenguaje natural, almacena el último valor del sensor localmente y puede consultar/controlar el dispositivo IoT mediante MQTT con autenticación TLS.
 
 <img width="1040" height="1762" alt="image" src="https://github.com/user-attachments/assets/e61e1ba8-781d-4cd3-b367-880012d488ec" />
+
+# **3. Implementación**
+
+El sistema fue implementado utilizando un microcontrolador ESP32 como objeto inteligente, encargado de la adquisición de datos y control de actuadores, junto con un servidor intermedio basado en Python que actúa como interfaz para herramientas externas, incluyendo integración con inteligencia artificial.
+
+La comunicación entre componentes se realiza mediante el protocolo MQTT sobre TLS, utilizando un broker en la nube (HiveMQ Cloud), lo que permite una arquitectura desacoplada y escalable.
+
+El desarrollo se realizó en:
+
+- Arduino IDE (C++) para el ESP32
+- Python para el servidor MQTT intermedio
+
+## 3.1. Diagrama de clases
+
+El sistema propuesto se estructura en tres clases principales. La clase central del diseño es `MQTTManager`, la cual concentra la lógica de conectividad y mensajería. Esta clase encapsula los parámetros de configuración de red (credenciales Wi-Fi mediante `ssid` y `password`, dirección del broker, puerto y `clientId`), así como las instancias de cliente seguro (`WiFiClientSecure`) y de cliente MQTT (`PubSubClient`). Sus métodos públicos contemplan la inicialización del sistema (`begin()`), la publicación y suscripción a tópicos (`publish()`, `subscribe()`), el ciclo de mantenimiento de la conexión (`loop()`) y la asignación dinámica de funciones de retorno (`setCallback()`).
+
+La clase `UltrasonicSensor` modela almacena los pines de disparo y eco (`trigPin`, `echoPin`) junto con el último valor medido (`lastRange`).  Por su parte, la clase `LedController` abstrae el manejo de un indicador luminoso RGB compuesto por tres pines de salida (`redPin`, `yellowPin`, `greenPin`). 
+
+<img width="661" height="402" alt="MQTT-DiagramaClases drawio" src="https://github.com/user-attachments/assets/5703cdc7-753c-46fa-9bc1-79748763e819" />
+
+## 3.2. Arquitectura de implementación
+
+El sistema sigue una arquitectura distribuida basada en publicación/suscripción (publish/subscribe), compuesta por tres módulos principales:
+
+- Objeto inteligente (ESP32): Mide la distancia mediante un sensor ultrasónico, publica datos al broker MQTT y recibe comandos para controlar actuadores.
+- Broker MQTT (HiveMQ Cloud): Intermedia la comunicación entre publicadores y suscriptores.
+- Servidor MQTT (Python + MCP): Permite la interacción con herramientas externas e IA. Traduce comandos de alto nivel a mensajes MQTT.
+
+Esta arquitectura permite desacoplar completamente los componentes, facilitando escalabilidad y flexibilidad.
+
+## 3.3 Implementación del objeto inteligente (ESP32)
+
+El objeto inteligente fue desarrollado en C++ utilizando un enfoque orientado a objetos, con separación clara de responsabilidades.
+
+- **Clase `UltrasonicSensor`:** Genera la señal ultrasónica, calcula la distancia en cm y filtra mediciones inválidas. Clasifica la distancia en rangos (RED, YELLOW, GREEN).
+- **Clase `MQTTManager`:** Gestiona la conexión WiFi, establece conexión segura con el broker MQTT, publica datos del sensor, recibe comandos mediante suscripción e implementa reconexión automática
+- **Clase `LedController`:** Controla los LEDs, interpreta comandos MQTT y garantiza que solo un LED esté activo a la vez
+
+Sigue el siguiente flujo de operación:
+
+1. El sensor mide la distancia periódicamente
+2. Se valida la medición
+3. Se clasifica en un rango
+4. Se publica solo si el rango cambia
+5. El sistema escucha comandos MQTT
+6. Los LEDs se actualizan en función de los comandos
+
+## 3.4 Implementación del servidor MQTT (Python)
+
+El servidor MQTT fue desarrollado en Python como un componente intermedio encargado de facilitar la interacción entre el sistema IoT y aplicaciones externas, particularmente herramientas basadas en inteligencia artificial. A diferencia del objeto inteligente, cuya función principal es la adquisición de datos y ejecución de acciones físicas, este servidor cumple un rol de abstracción y mediación, permitiendo transformar solicitudes de alto nivel en operaciones concretas dentro del ecosistema MQTT.
+
+El servidor fue implementado en Python utilizando:
+
+- `paho-mqtt` para comunicación MQTT
+- `asyncio` para manejo asíncrono
+- MCP (Model Context Protocol) para exponer herramientas a IA
+
+A través de este mecanismo, se exponen herramientas (tools) que pueden ser invocadas por sistemas externos, como modelos de lenguaje. Estas herramientas encapsulan funcionalidades específicas del sistema, tales como el envío de comandos a los actuadores (`send_led_command`) y la consulta del último valor de distancia registrado (`get_distance`).
+
+Cuando se invoca una herramienta de control, el servidor traduce la solicitud en un mensaje MQTT válido, el cual es publicado en el tópico de comandos. Este mensaje es posteriormente recibido por el ESP32, cerrando así el ciclo de control. Por otro lado, las consultas de datos no implican comunicación adicional con el dispositivo, sino que se resuelven utilizando el estado almacenado, lo que reduce la latencia y la carga de red.
+
+## 3.5 Comunicación MQTT
+
+La comunicación entre los distintos componentes del sistema se basa en el protocolo MQTT, el cual sigue un modelo de publicación/suscripción que resulta especialmente adecuado para entornos IoT debido a su bajo consumo de recursos y su flexibilidad. En este esquema, los dispositivos no se comunican directamente entre sí, sino que intercambian información a través de un broker central, lo que permite desacoplar completamente los emisores y receptores de datos.
+
+El sistema utiliza los siguientes tópicos:
+
+- **Sensor:**
+    - `sis234/grupo3/sensor/distance`
+- **Comandos:**
+    - `sis234/grupo3/actuator/leds`
+
+## **3.6 Manejo de confiabilidad**
+
+Para mejorar la confiabilidad del sistema, se implementaron los siguientes mecanismos:
+
+- **Reconexión automática:** Intentos cada 2000 ms
+- **Re-suscripción automática:** Tras reconexión
+- **Filtrado de datos inválidos:** Evita ruido en mediciones
+- **Procesamiento eficiente:** Publicación solo ante cambios relevantes
+
+## **3.7 Organización del código**
+
+El proyecto se encuentra estructurado de la siguiente manera:
+
+```
+main/
+ ├── main.ino
+ ├── UltrasonicSensor.h
+ ├── UltrasonicSensor.cpp
+ ├── LedController.h
+ ├── LedController.cpp
+ ├── MQTTManager.h
+ ├── MQTTManager.cpp
+ ├── config.h
+ 
+MCP-MQTT/
+ ├── MQTT_server/
+	 ├── MQTT_server.py
+```
+
+Esta estructura permite una clara separación de responsabilidades y facilita el mantenimiento y escalabilidad del sistema.
